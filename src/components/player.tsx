@@ -23,7 +23,10 @@ export const Player = ({image,name,point,description,onClick,isSelected}:PlayerP
             <p className="text-muted-foreground">{description}</p>
           </div>
           <div className="flex justify-center items-center flex-none">
-            <p className="font-bold text-3xl">{point}</p>
+            <p className={cn(
+              point < 0? "text-red-500":"text-green-500",
+              point === 0 && "text-primary",
+              "font-bold text-4xl")}>{Math.abs(point)}</p>
             <img src={aoh} className="h-[25px]"/>
           </div>
         </div>

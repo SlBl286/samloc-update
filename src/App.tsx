@@ -6,8 +6,8 @@ import { usePlayers } from "./hooks/players";
 import { useState } from "react";
 import { UpdatePlayerModal } from "./components/update-player-modal";
 import { DeletePlayerDialog } from "./components/delete-player-modal";
-import { Button } from "./components/ui/button";
 import { WinGameModal } from "./components/win-game-modal";
+import { CheckGameModal } from "./components/check-game-modal";
 function App() {
   const { players, remove, getPlayer } = usePlayers();
   const [idSelected, setIdSelected] = useState<number | null>(null);
@@ -61,7 +61,7 @@ function App() {
         {idSelected !== null && (
           <div className=" fixed bottom-10 flex gap-x-2">
             <WinGameModal id={idSelected}/>
-            <Button>Báo sâm</Button>
+            <CheckGameModal id={idSelected} />
           </div>
         )}
       </div>

@@ -1,12 +1,13 @@
 import { PlayerType } from "@/types";
 import { create } from "zustand";
-import a from "@/assets/capybara.png";
+import panda from "@/assets/panda.png";
 type PlayersStore = {
   LAST_ID: number;
   players: PlayerType[];
   add: (player: PlayerType) => void;
   remove: (id: number) => void;
   update: (id: number, data: PlayerType) => void;
+  setPoint: (id: number, point: number) => void;
   getPlayer: (id: number) => PlayerType ;
 };
 
@@ -17,7 +18,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
       id: 0,
       name: "Qý",
       point: 0,
-      image: a,
+      image: panda,
     },
   ],
   add: (player) => {
@@ -41,7 +42,20 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
         description: data.description,
       };
       const deletedPlayers = state.players.filter(p=> p.id !== id);
-      console.log(deletedPlayers);
+      return { players: [...deletedPlayers, updatedPlayer] };
+    });
+  },
+  setPoint: (id, point) => {
+    set((state) => {
+      var currentPlayer = state.players.find((p) => p.id === id) ?? state.players[0]
+      const updatedPlayer: PlayerType = {
+        id: id,
+        name: currentPlayer.name,
+        point: point,
+        image: currentPlayer.image,
+        description: currentPlayer.description,
+      };
+      const deletedPlayers = state.players.filter(p=> p.id !== id);
       return { players: [...deletedPlayers, updatedPlayer] };
     });
   },

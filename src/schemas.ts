@@ -5,3 +5,4 @@ export const addPlayerShema = z.object({
     description : z.string().optional(),
     image : z.string().optional(),
 })
+

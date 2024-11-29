@@ -5,3 +5,7 @@ export type PlayerType = {
     point: number;
     image?: string;
 }
+export type PointSateType = {
+    id: number;
+    point: number;
+}

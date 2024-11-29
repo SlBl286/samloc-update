@@ -8,40 +8,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { addPlayerShema } from "@/schemas";
 import { Input } from "./ui/input";
 import { useState } from "react";
-import blank from "@/assets/blank.png";
 import win from "@/assets/win.png";
 import { Label } from "./ui/label";
+
+import { useForm } from "react-hook-form";
 type WinGameModalProps = {
   id: number;
 };
 export const WinGameModal = ({ id }: WinGameModalProps) => {
   const [open, setOpen] = useState(false);
-  const { add, LAST_ID, players } = usePlayers();
-  const form = useForm<z.infer<typeof addPlayerShema>>({
-    resolver: zodResolver(addPlayerShema),
-    defaultValues: {
-      name: "",
-      image: blank,
-    },
-  });
+  const { players, setPoint, getPlayer } = usePlayers();
+  const { register, handleSubmit, reset, unregister } = useForm();
+  const onSubmit = (values: Object) => {
+    console.log(values);
+    var total: number = 0;
+    for (const [key, value] of Object.entries(values)) {
+      var currentPlayer = getPlayer(parseInt(key));
+      console.log(parseInt(value));
+      total += parseInt(value);
+      setPoint(currentPlayer.id, currentPlayer.point - parseInt(value));
+      unregister(key);
+    }
+    var winPlayer = getPlayer(id);
 
-  const onSubmit = (values: z.infer<typeof addPlayerShema>) => {
-    add({
-      id: LAST_ID,
-      name: values.name,
-      description: values.description,
-      image: values.image,
-      point: 0,
-    });
-    form.reset();
-    if (players.length === 4) setOpen(false);
+    setPoint(id, winPlayer.point + total);
+    reset();
+    setOpen(false);
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -59,24 +53,30 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-center w-full h-full">
-          <div className="w-full flex flex-col">
+          <form
+            className="w-full flex flex-col"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <div className="flex flex-col  w-full gap-y-2">
-            {players
-            .filter(p=>p.id !== id)
-            .sort((a, b) => a.id - b.id)
-            .map((p) => (
-             <div key={p.id} className="flex items-center gap-x-2 justify-start">
-                <Label>{p.name}</Label>
-                <Input type="number"/>
-             </div>
-            ))}
+              {players
+                .filter((p) => p.id !== id)
+                .sort((a, b) => a.id - b.id)
+                .map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-x-2 justify-start"
+                  >
+                    <Label className="flex flex-row items-center justify-center gap-x-1 mr-3"><img src={p.image}  width={25}/> {p.name}</Label>
+                    <Input {...register(p.id.toString(),{value:0})} type="number" />
+                  </div>
+                ))}
             </div>
             <div className="pt-4 w-full flex justify-end">
               <Button type="submit" className="w-full">
                 Tính tiền
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       </DialogContent>
     </Dialog>
