@@ -8,13 +8,25 @@ import { UpdatePlayerModal } from "./components/update-player-modal";
 import { DeletePlayerDialog } from "./components/delete-player-modal";
 import { WinGameModal } from "./components/win-game-modal";
 import { CheckGameModal } from "./components/check-game-modal";
+import { useToast } from "./hooks/use-toast";
 function App() {
   const { players, remove, getPlayer } = usePlayers();
   const [idSelected, setIdSelected] = useState<number | null>(null);
+  const { toast } = useToast()
 
   const onRemovePlayer = () => {
-    remove(idSelected ?? 0);
-    setIdSelected(null);
+    const player = getPlayer(idSelected ?? 0);
+    if(player.point !== 0){
+      toast({
+        title: "Không thể xoá " + player.name,
+        description: "Chưa đưa điểm về 0 nên ko thể xoá!",
+        variant: "destructive"
+      })
+    }
+    else{
+      remove(idSelected ?? 0);
+      setIdSelected(null);
+    }
   };
 
   return (

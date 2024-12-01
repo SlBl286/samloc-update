@@ -15,7 +15,7 @@ export const Player = ({image,name,point,description,onClick,isSelected}:PlayerP
         <div className={cn(isSelected ? "bg-foreground/50" : "bg-foreground/10",
           "flex gap-x-4 h-[70px] w-full p-2 rounded-md")}
            onClick={onClick}>
-          <div className="flex flex-col justify-center items-center h-full flex-none bg-foreground/75 rounded-md">
+          <div className="flex flex-col justify-center items-center h-full flex-none bg-foreground/75 rounded-md p-1 pb-0">
             <img src={image} alt="avatar" className="object-cover h-full w-full "/>
           </div>
           <div className="flex flex-col justify-center items-start grow">

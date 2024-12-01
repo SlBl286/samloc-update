@@ -34,12 +34,13 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
   },
   update: (id, data) => {
     set((state) => {
+      var currentPlayer = state.players.find((p) => p.id === id) ?? state.players[0]
       const updatedPlayer: PlayerType = {
         id: id,
         name: data.name,
-        point: data.point,
+        point: currentPlayer .point,
         image: data.image,
-        description: data.description,
+        description: currentPlayer.description,
       };
       const deletedPlayers = state.players.filter(p=> p.id !== id);
       return { players: [...deletedPlayers, updatedPlayer] };
