@@ -21,7 +21,7 @@ export const CheckGameModal = ({
   onConfirm,
 }: WinGameModalProps) => {
   const [open, setOpen] = useState(false);
-  const { players, setPoint } = usePlayers();
+  const { players, setPoint,saveGame } = usePlayers();
   const onModalClose = () => {
     if (onCancel) onCancel();
     setOpen(false);
@@ -32,6 +32,7 @@ export const CheckGameModal = ({
       else setPoint(p.id, p.point - 20);
     });
     if (onConfirm) onConfirm();
+    saveGame();
     setOpen(false);
   };
   return (

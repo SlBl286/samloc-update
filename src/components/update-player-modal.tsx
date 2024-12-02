@@ -12,7 +12,7 @@ import { Form, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addPlayerShema } from "@/schemas";
+import { addPlayerShema } from "@/common/schemas";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import { AvatarPicker } from "./avatar-picker";

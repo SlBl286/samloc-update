@@ -9,6 +9,7 @@ import leo from "@/assets/leo.png"
 import man from "@/assets/man.png"
 import saree from "@/assets/saree.png"
 import woman from "@/assets/woman.png"
+import diamond from "@/assets/diamond.png"
 export const AVATAR_LIST = [
     panda,
     boy,
@@ -21,4 +22,5 @@ export const AVATAR_LIST = [
     woman,
     man,
     saree,
+    diamond,
 ]

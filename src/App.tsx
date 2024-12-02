@@ -3,17 +3,21 @@ import { ModeToggle } from "./components/mode-toggle";
 import { Player } from "./components/player";
 import { AddPlayerModal } from "./components/add-player-modal";
 import { usePlayers } from "./hooks/players";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UpdatePlayerModal } from "./components/update-player-modal";
 import { DeletePlayerDialog } from "./components/delete-player-modal";
 import { WinGameModal } from "./components/win-game-modal";
 import { CheckGameModal } from "./components/check-game-modal";
 import { useToast } from "./hooks/use-toast";
+import { SettingsDropdown } from "./components/setting-dropdown";
 function App() {
-  const { players, remove, getPlayer } = usePlayers();
+  const { players, remove, getPlayer,loadGame } = usePlayers();
   const [idSelected, setIdSelected] = useState<number | null>(null);
   const { toast } = useToast()
 
+  useEffect(()=>{
+    loadGame();
+  },[])
   const onRemovePlayer = () => {
     const player = getPlayer(idSelected ?? 0);
     if(player.point !== 0){
@@ -32,10 +36,17 @@ function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <div className="w-screen h-screen items-center justify-center flex">
-        <div className="fixed top-4 left-4 flex gap-x-2">
+        <div className="fixed top-4 left-4 ">
           <AddPlayerModal />
-          {idSelected !== null && (
-            <div className="inline-flex gap-x-2">
+        </div>
+        
+        <div className="fixed top-4 right-4 flex gap-x-2">
+          <ModeToggle />
+<SettingsDropdown/>
+        </div>
+        <div className="flex flex-col relative  gap-y-4 w-screen md:w-[500px] items-center justify-center px-4">
+        {idSelected !== null && (
+            <div className=" absolute top-[-50px] gap-x-2">
               <UpdatePlayerModal
                 id={idSelected}
                 onDialogClose={() => {
@@ -49,11 +60,6 @@ function App() {
               />
             </div>
           )}
-        </div>
-        <div className="fixed top-4 right-4">
-          <ModeToggle />
-        </div>
-        <div className="flex flex-col gap-y-4 w-screen md:w-[500px] items-center justify-center px-4">
           {players
             .sort((a, b) => a.id - b.id)
             .map((p) => (

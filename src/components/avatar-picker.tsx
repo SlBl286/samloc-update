@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { AVATAR_LIST } from "@/avatar-list";
+import { AVATAR_LIST } from "@/common/avatar-list";
 
 interface AvatarPickerProps {
   selectedAvatar: string;
