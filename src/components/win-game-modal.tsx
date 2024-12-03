@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { Trash2 } from "lucide-react";
 type WinGameModalProps = {
   id: number;
 };
@@ -54,13 +55,13 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
     for (const [key, value] of step2Value) {
       if (key.includes("l-")) continue;
       else {
-        console.log(key.split("-"))
+        console.log(key.split("-"));
         let pairIndex = key.split("-")[1];
-        let lValue : string | undefined = step2Value.find(
+        let lValue: string | undefined = step2Value.find(
           ([k]) => k === "l-" + pairIndex.toString()
         )?.[1];
         if (lValue && value) {
-          console.log((parseInt(value)),parseInt(lValue.toString()))
+          console.log(parseInt(value), parseInt(lValue.toString()));
           var lPlayer = getPlayer(parseInt(lValue.toString()));
           var wPlayer = getPlayer(parseInt(value));
           setPoint(parseInt(value), wPlayer.point + 10);
@@ -74,6 +75,10 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
     setOpen(false);
     setStep(1);
   };
+
+  const onResetStep2 = ()=> {
+    setValue("w-1",undefined);
+  }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -116,7 +121,7 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
               </div>
             ) : (
               <div className="flex flex-col gap-y-2 w-full">
-                {listFormStep2.map((x, i) => (
+                {listFormStep2.map((_, i) => (
                   <div className="flex" key={i}>
                     <div className="flex w-5/12">
                       <Select
@@ -175,6 +180,11 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
                     </div>
                   </div>
                 ))}
+
+                <Button type="button" className="w-full my-2" variant={"destructive"} onClick={onResetStep2}>
+                  <Trash2 />
+                  Xoá dữ liệu hiện tại
+                </Button>
               </div>
             )}
             <div className="pt-4 w-full flex justify-end gap-x-2">

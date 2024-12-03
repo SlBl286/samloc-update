@@ -11,7 +11,7 @@ type PlayersStore = {
   setPoint: (id: number, point: number) => void;
   getPlayer: (id: number) => PlayerType;
   saveGame: () => void;
-  loadGame: () => void;
+  loadGame: (lastId?: number, playersRestore?: PlayerType[]) => void;
   clearSaveGame: () => void;
 };
 
@@ -74,31 +74,37 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
     localStorage.setItem(GAME_KEY, JSON.stringify(get().players));
     localStorage.setItem(LAST_ID_KEY, JSON.stringify(get().LAST_ID));
   },
-  loadGame: () => {
-    set((state) => {
-      let playersStr = localStorage.getItem(GAME_KEY);
-      let lastIdStr = localStorage.getItem(LAST_ID_KEY);
-      let playersBackup: PlayerType[] = [
-        {
-          id: 0,
-          name: "Qý",
-          point: 0,
-          image: panda,
-        },
-      ];
-      let lastIdBackup = 1;
-      if (playersStr) {
-        playersBackup = JSON.parse(playersStr);
+  loadGame: (lastId, playersRestore) => {
+    set((_) => {
+      if (lastId && playersRestore) {
+        return { players: playersRestore, LAST_ID: lastId };
+
+      } else {
+        let playersStr = localStorage.getItem(GAME_KEY);
+        let lastIdStr = localStorage.getItem(LAST_ID_KEY);
+        let playersBackup: PlayerType[] = [
+          {
+            id: 0,
+            name: "Qý",
+            point: 0,
+            image: panda,
+          },
+        ];
+        let lastIdBackup = 1;
+        if (playersStr) {
+          playersBackup = JSON.parse(playersStr);
+        }
+        if (lastIdStr) {
+          lastIdBackup = JSON.parse(lastIdStr);
+        }
+
+        return { players: playersBackup, LAST_ID: lastIdBackup };
       }
-      if (lastIdStr) {
-        lastIdBackup = JSON.parse(lastIdStr);
-      }
-      return { players: playersBackup, LAST_ID: lastIdBackup };
     });
   },
 
   clearSaveGame: () => {
-    set((state) => {
+    set((_) => {
       return {
         LAST_ID: 1,
         players: [

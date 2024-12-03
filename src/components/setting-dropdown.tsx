@@ -1,4 +1,4 @@
-import { Download, Info, Plus, Settings, Upload } from "lucide-react";
+import { Download, Plus, Settings, Upload } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -7,13 +7,26 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { usePlayers } from "@/hooks/players";
+import { useRef } from "react";
+import { DeveloperCreditModal } from "./developer-credit-modal";
 
 export const SettingsDropdown = () => {
-  const { players } = usePlayers();
+  const { players, LAST_ID, clearSaveGame,loadGame } = usePlayers();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const onNewGame = () => {
+    clearSaveGame();
+  };
 
   const onDownload = () => {
-    const fileName = "my-file";
-    const json = JSON.stringify(players, null, 2);
+    const fileName = "samloc-"+ Date();
+    const json = JSON.stringify(
+      {
+        LAST_ID: LAST_ID,
+        players: players,
+      },
+      null,
+      2
+    );
     const blob = new Blob([json], { type: "application/json" });
     const href = URL.createObjectURL(blob);
 
@@ -28,8 +41,40 @@ export const SettingsDropdown = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(href);
   };
+
+  const onUpload = () => {
+    inputRef.current?.click();
+  };
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const content = JSON.parse(e.target?.result as string);
+          loadGame(content.LAST_ID, content.players)
+        } catch (err) {
+          console.log(err);
+
+        }
+      };
+
+      reader.onerror = () => {};
+
+      reader.readAsText(file);
+    }
+  };
   return (
     <div>
+      <input
+        type="file"
+        accept=".json"
+        onChange={handleFileUpload}
+        className="hidden"
+        ref={inputRef}
+      />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={"outline"} size="icon">
@@ -37,21 +82,20 @@ export const SettingsDropdown = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={onNewGame}>
             <Plus />
             Ván mới
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={onUpload}>
             <Upload />
             Tải lên ván cũ
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onDownload}>
-              <Download />
-              Tải xuống ván hiện tại
+            <Download />
+            Tải xuống ván hiện tại
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Info />
-            Thông tin<strong>@Qý</strong>
+          <DropdownMenuItem asChild>
+            <DeveloperCreditModal />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

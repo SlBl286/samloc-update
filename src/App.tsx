@@ -46,7 +46,7 @@ function App() {
         </div>
         <div className="flex flex-col relative  gap-y-4 w-screen md:w-[500px] items-center justify-center px-4">
         {idSelected !== null && (
-            <div className=" absolute top-[-50px] gap-x-2">
+            <div className=" absolute top-[-50px] gap-x-2 flex">
               <UpdatePlayerModal
                 id={idSelected}
                 onDialogClose={() => {
