@@ -11,23 +11,22 @@ import { CheckGameModal } from "./components/check-game-modal";
 import { useToast } from "./hooks/use-toast";
 import { SettingsDropdown } from "./components/setting-dropdown";
 function App() {
-  const { players, remove, getPlayer,loadGame } = usePlayers();
+  const { players, remove, getPlayer, loadGame } = usePlayers();
   const [idSelected, setIdSelected] = useState<number | null>(null);
-  const { toast } = useToast()
+  const { toast } = useToast();
 
-  useEffect(()=>{
+  useEffect(() => {
     loadGame();
-  },[])
+  }, []);
   const onRemovePlayer = () => {
     const player = getPlayer(idSelected ?? 0);
-    if(player.point !== 0){
+    if (player.point !== 0) {
       toast({
         title: "Không thể xoá " + player.name,
         description: "Chưa đưa điểm về 0 nên ko thể xoá!",
-        variant: "destructive"
-      })
-    }
-    else{
+        variant: "destructive",
+      });
+    } else {
       remove(idSelected ?? 0);
       setIdSelected(null);
     }
@@ -39,13 +38,13 @@ function App() {
         <div className="fixed top-4 left-4 ">
           <AddPlayerModal />
         </div>
-        
+
         <div className="fixed top-4 right-4 flex gap-x-2">
           <ModeToggle />
-<SettingsDropdown/>
+          <SettingsDropdown />
         </div>
         <div className="flex flex-col relative  gap-y-4 w-screen md:w-[500px] items-center justify-center px-4">
-        {idSelected !== null && (
+          {idSelected !== null && (
             <div className=" absolute top-[-50px] gap-x-2 flex">
               <UpdatePlayerModal
                 id={idSelected}
@@ -63,22 +62,24 @@ function App() {
           {players
             .sort((a, b) => a.id - b.id)
             .map((p) => (
-              <Player
-                isSelected={idSelected === p.id}
-                onClick={() => {
-                  setIdSelected(p.id);
-                }}
-                key={p.id}
-                name={p.name}
-                description={p.description}
-                image={p.image}
-                point={p.point}
-              />
-            ))}
+                <Player
+                  id={p.id}
+                  isSelected={idSelected === p.id}
+                  onClick={() => {
+                    setIdSelected(p.id);
+                  }}
+                  key={p.id}
+                  name={p.name}
+                  histories={p.histories}
+                  image={p.image}
+                  point={p.point}
+                />
+              )
+            )}
         </div>
         {idSelected !== null && (
           <div className=" fixed bottom-10 flex gap-x-2">
-            <WinGameModal id={idSelected}/>
+            <WinGameModal id={idSelected} />
             <CheckGameModal id={idSelected} />
           </div>
         )}

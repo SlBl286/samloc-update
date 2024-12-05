@@ -38,14 +38,14 @@ export const CheckGameModal = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="">
+        <Button variant="outline" className="text-blue-500">
           <img src={happy} width={30} />
           Báo sâm
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Báo sâm</DialogTitle>
+          <DialogTitle >Báo sâm</DialogTitle>
           <DialogDescription className="pt-2">
             Người ko chơi là người thắng! Dừng lại trước khi quá muộn.
           </DialogDescription>

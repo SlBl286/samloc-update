@@ -1,4 +1,4 @@
-import { PlayerType } from "@/common/types";
+import { PlayerType,HistoryType } from "@/common/types";
 import { create } from "zustand";
 import panda from "@/assets/panda.png";
 import { GAME_KEY, LAST_ID_KEY } from "@/common/contants";
@@ -10,6 +10,7 @@ type PlayersStore = {
   update: (id: number, data: PlayerType) => void;
   setPoint: (id: number, point: number) => void;
   getPlayer: (id: number) => PlayerType;
+  getHighestPointId : ()=> number;
   saveGame: () => void;
   loadGame: (lastId?: number, playersRestore?: PlayerType[]) => void;
   clearSaveGame: () => void;
@@ -23,6 +24,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
       name: "Qý",
       point: 0,
       image: panda,
+      histories: []
     },
   ],
   add: (player) => {
@@ -46,6 +48,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
         point: currentPlayer.point,
         image: data.image,
         description: currentPlayer.description,
+        histories : []
       };
       const deletedPlayers = state.players.filter((p) => p.id !== id);
       return { players: [...deletedPlayers, updatedPlayer] };
@@ -53,14 +56,35 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
   },
   setPoint: (id, point) => {
     set((state) => {
+    
       var currentPlayer =
         state.players.find((p) => p.id === id) ?? state.players[0];
+        var histories = [...currentPlayer.histories]
+        if(currentPlayer.point > point){
+          histories.push({
+            gameNumber: 0,
+            state : "L",
+            pointChange : point,
+            block2 : 0,
+            isBlock2 : 0,
+          })
+        }
+        else if( currentPlayer.point< point){
+          histories.push({
+            gameNumber: 0,
+            state : "W",
+            pointChange : point,
+            block2 : 0,
+            isBlock2 : 0,
+          })
+        }
       const updatedPlayer: PlayerType = {
         id: id,
         name: currentPlayer.name,
         point: point,
         image: currentPlayer.image,
         description: currentPlayer.description,
+        histories: histories
       };
       const deletedPlayers = state.players.filter((p) => p.id !== id);
       return { players: [...deletedPlayers, updatedPlayer] };
@@ -88,6 +112,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
             name: "Qý",
             point: 0,
             image: panda,
+            histories : []
           },
         ];
         let lastIdBackup = 1;
@@ -102,7 +127,10 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
       }
     });
   },
-
+  getHighestPointId:()=> {
+    var players =[...get().players]
+    return players.sort((a,b)=> b.point - a.point)[0].id;
+  },
   clearSaveGame: () => {
     set((_) => {
       return {
@@ -113,6 +141,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
             name: "Qý",
             point: 0,
             image: panda,
+            histories : []
           },
         ],
       };

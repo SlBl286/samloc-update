@@ -10,7 +10,7 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { useState } from "react";
-import win from "@/assets/win.png";
+import win from "@/assets/heart-eyes.png";
 import { Label } from "./ui/label";
 import trick from "@/assets/trick.png";
 import { useForm } from "react-hook-form";
@@ -35,9 +35,11 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
   const onSubmit = (values: Object) => {
     //step 1
     var total: number = 0;
+    console.log(values)
     var step1Value = Object.entries(values).filter(([k]) => {
       return !(k.includes("w-") || k.includes("l-"));
     });
+
     for (const [key, value] of step1Value) {
       var currentPlayer = getPlayer(parseInt(key));
       total += parseInt(value);
@@ -45,10 +47,9 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
       unregister(key);
     }
     var winPlayer = getPlayer(id);
-
+    
     setPoint(id, winPlayer.point + total);
-
-    // step 2
+    // // step 2
     var step2Value = Object.entries(values).filter(([k]) => {
       return k.includes("w-") || k.includes("l-");
     });
