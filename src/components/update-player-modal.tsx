@@ -40,6 +40,7 @@ export const UpdatePlayerModal = ({ id,onDialogClose }: UpdatePlayerModalProps) 
       description: values.description,
       image: values.image,
       point: 0,
+      histories: []
     });
     form.reset();
     setOpen(false);

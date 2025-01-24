@@ -42,19 +42,19 @@ export const Player = ({
       </div>
       <div className="flex flex-col justify-center items-start grow">
         <p className=" font-bold text-lg">{name}</p>
-        <div className="flex gap-x-1 overflow-hidden">{
+        <div className="flex gap-x-1 overflow-hidden w-[99px]">{
       
-      histories.map(h => (
+      histories.slice((histories.length-5),histories.length).map(h => (
         <p className={cn(h.state == "W" ? "text-green-500": "text-red-500","text-sm")}>{h.state}</p>
       ))
       }</div>
       </div>
-      <div className="flex justify-center items-center flex-none">
+      <div className="flex justify-center items-center flex-none object-fit">
         <p
           className={cn(
             point < 0 ? "text-red-500" : "text-green-500",
             point === 0 && "text-primary",
-            "font-bold text-4xl"
+            "font-bold text-3xl"
           )}
         >
           {Math.abs(point)}

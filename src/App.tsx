@@ -10,6 +10,7 @@ import { WinGameModal } from "./components/win-game-modal";
 import { CheckGameModal } from "./components/check-game-modal";
 import { useToast } from "./hooks/use-toast";
 import { SettingsDropdown } from "./components/setting-dropdown";
+import { HistoryPlayerModal } from "./components/history-player-modal";
 function App() {
   const { players, remove, getPlayer, loadGame } = usePlayers();
   const [idSelected, setIdSelected] = useState<number | null>(null);
@@ -56,6 +57,12 @@ function App() {
                 playerName={getPlayer(idSelected).name}
                 onConfirm={onRemovePlayer}
                 onCancel={() => {}}
+              />
+              <HistoryPlayerModal
+               id={idSelected}
+               onDialogClose={() => {
+                 setIdSelected(null);
+               }}
               />
             </div>
           )}

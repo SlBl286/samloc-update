@@ -1,4 +1,4 @@
-import { PlayerType,HistoryType } from "@/common/types";
+import { PlayerType } from "@/common/types";
 import { create } from "zustand";
 import panda from "@/assets/panda.png";
 import { GAME_KEY, LAST_ID_KEY } from "@/common/contants";
@@ -48,7 +48,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
         point: currentPlayer.point,
         image: data.image,
         description: currentPlayer.description,
-        histories : []
+        histories : currentPlayer.histories
       };
       const deletedPlayers = state.players.filter((p) => p.id !== id);
       return { players: [...deletedPlayers, updatedPlayer] };

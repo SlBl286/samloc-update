@@ -14,24 +14,28 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addPlayerShema } from "@/common/schemas";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AvatarPicker } from "./avatar-picker";
-import blank from "@/assets/blank.png"
-import { Plus } from "lucide-react";
-export const AddPlayerModal = () => {
+import { History } from "lucide-react";
+type HistoryPlayerModalProps = {
+  id: number;
+  onDialogClose?: ()=> void
+};
+export const HistoryPlayerModal = ({ id,onDialogClose }: HistoryPlayerModalProps) => {
   const [open, setOpen] = useState(false);
-  const { add, LAST_ID, players } = usePlayers();
+  const { update } = usePlayers();
+  const player = usePlayers(state=> state.getPlayer(id));
   const form = useForm<z.infer<typeof addPlayerShema>>({
     resolver: zodResolver(addPlayerShema),
-    defaultValues: {
-      name: "",
-      image: blank,
-    },
+    defaultValues: player ,
   });
-
+  useEffect(()=> {
+    form.setValue("image",player.image);
+    form.setValue("name",player.name);
+  },[player,form])
   const onSubmit = (values: z.infer<typeof addPlayerShema>) => {
-    add({
-      id: LAST_ID,
+    update(id, {
+      id: id,
       name: values.name,
       description: values.description,
       image: values.image,
@@ -39,16 +43,28 @@ export const AddPlayerModal = () => {
       histories: []
     });
     form.reset();
-    if (players.length === 4) setOpen(false);
+    setOpen(false);
+  };
+
+  const onDialogChange = (open: boolean) => {
+   
+    setOpen(open);
+    if (!open) {
+      if(onDialogClose !== undefined) onDialogClose();
+      form.reset();
+    }
   };
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onDialogChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="text-green-600"><Plus/> Thêm</Button>
+        <Button variant="outline" className="text-green-600">
+          <History />
+          Lịch sử
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Thêm người chơi</DialogTitle>
+          <DialogTitle>Sửa thông tin</DialogTitle>
           <DialogDescription className="pt-2">
             Người ko chơi là người thắng! Dừng lại trước khi quá muộn.
           </DialogDescription>
@@ -90,7 +106,9 @@ export const AddPlayerModal = () => {
                 />
               </div>
               <div className="pt-4 w-full flex justify-end">
-                <Button type="submit" className="w-full">Thêm mới</Button>
+                <Button type="submit" className="w-full">
+                  Lưu lại
+                </Button>
               </div>
             </form>
           </Form>
