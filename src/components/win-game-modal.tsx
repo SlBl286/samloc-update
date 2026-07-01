@@ -9,77 +9,96 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import win from "@/assets/heart-eyes.png";
 import { Label } from "./ui/label";
-import trick from "@/assets/trick.png";
 import { useForm } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { Trash2 } from "lucide-react";
+import fire from "@/assets/fire.png";
+
 type WinGameModalProps = {
   id: number;
 };
 export const WinGameModal = ({ id }: WinGameModalProps) => {
-  const [step, setStep] = useState(1);
   const [open, setOpen] = useState(false);
-  const { players, setPoint, getPlayer, saveGame } = usePlayers();
-  const { register, handleSubmit, reset, unregister, setValue, getValues } =
+  const { players, setPoint, saveGame, multiplier } = usePlayers();
+  const { register, handleSubmit, reset, unregister, setValue } =
     useForm();
-  const listFormStep2 = [1, 2, 3, 4];
+  const [chopChains, setChopChains] = useState<number[][]>([]);
+
+  useEffect(() => {
+    if (!open) {
+      setChopChains([]);
+    }
+  }, [open]);
+
   const onSubmit = (values: Object) => {
-    //step 1
-    var total: number = 0;
-    console.log(values)
-    var step1Value = Object.entries(values).filter(([k]) => {
-      return !(k.includes("w-") || k.includes("l-"));
+    setOpen(false);
+    
+    // 1. Initialize changes for all players to 0
+    const cardsChanges: { [playerId: number]: number } = {};
+    const chopsChanges: { [playerId: number]: number } = {};
+    players.forEach(p => {
+      cardsChanges[p.id] = 0;
+      chopsChanges[p.id] = 0;
     });
 
+    // 2. Calculate card points changes
+    var step1Value = Object.entries(values).filter(([k]) => {
+      return !isNaN(parseInt(k));
+    });
+
+    var total: number = 0;
     for (const [key, value] of step1Value) {
-      var currentPlayer = getPlayer(parseInt(key));
-      total += parseInt(value);
-      setPoint(currentPlayer.id, currentPlayer.point - parseInt(value));
+      const pid = parseInt(key);
+      const val = parseInt(value as string) || 0;
+      total += val;
+      cardsChanges[pid] -= val;
       unregister(key);
     }
-    var winPlayer = getPlayer(id);
-    
-    setPoint(id, winPlayer.point + total);
-    // // step 2
-    var step2Value = Object.entries(values).filter(([k]) => {
-      return k.includes("w-") || k.includes("l-");
-    });
-    for (const [key, value] of step2Value) {
-      if (key.includes("l-")) continue;
-      else {
-        console.log(key.split("-"));
-        let pairIndex = key.split("-")[1];
-        let lValue: string | undefined = step2Value.find(
-          ([k]) => k === "l-" + pairIndex.toString()
-        )?.[1];
-        if (lValue && value) {
-          console.log(parseInt(value), parseInt(lValue.toString()));
-          var lPlayer = getPlayer(parseInt(lValue.toString()));
-          var wPlayer = getPlayer(parseInt(value));
-          setPoint(parseInt(value), wPlayer.point + 10);
-          setPoint(parseInt(lValue.toString()), lPlayer.point - 10);
-        }
-      }
+    cardsChanges[id] += total;
+
+    // 3. Calculate chop chains changes (only the last person who got over-chopped pays)
+    for (const chain of chopChains) {
+      const validChain = chain.filter((playerId) => playerId !== null && !isNaN(playerId));
+      if (validChain.length < 2) continue;
+
+      const N = validChain.length - 1; // Number of chop transactions
+      const amount = 10 * Math.pow(2, N - 1);
+      const payPlayerId = validChain[N - 1];
+      const receivePlayerId = validChain[N];
+
+      chopsChanges[payPlayerId] -= amount;
+      chopsChanges[receivePlayerId] += amount;
     }
+
+    // 4. Apply net point changes using setPoint (exactly once for every player in the game)
+    const paidInChops = new Set<number>();
+    players.forEach((p) => {
+      if ((chopsChanges[p.id] || 0) < 0) {
+        paidInChops.add(p.id);
+      }
+    });
+
+    players.forEach((p) => {
+      const cardsDelta = (cardsChanges[p.id] || 0) * multiplier;
+      const chopsDelta = (chopsChanges[p.id] || 0) * multiplier;
+      const change = cardsDelta + chopsDelta;
+      const val = p.id === id ? total : (parseInt((values as any)[p.id.toString()] as string) || 0);
+      
+      setPoint(p.id, p.point + change, {
+        cardsCount: val,
+        isChay: p.id !== id && val === 15,
+        samStatus: "none",
+        isChopped2: paidInChops.has(p.id),
+        cardsDelta: cardsDelta,
+        chopsDelta: chopsDelta,
+      });
+    });
 
     saveGame();
     reset();
-    setOpen(false);
-    setStep(1);
   };
 
-  const onResetStep2 = ()=> {
-    setValue("w-1",undefined);
-  }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -100,103 +119,112 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
             className="w-full flex flex-col"
             onSubmit={handleSubmit(onSubmit)}
           >
-            {step === 1 ? (
-              <div className="flex flex-col  w-full gap-y-2">
-                {players
-                  .filter((p) => p.id !== id)
-                  .sort((a, b) => a.id - b.id)
-                  .map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-x-2 justify-start"
-                    >
-                      <Label className="flex flex-row items-center justify-center gap-x-1 mr-3">
-                        <img src={p.image} width={25} /> {p.name}
+            <div className="flex flex-col w-full gap-y-2">
+              {players
+                .filter((p) => p.id !== id)
+                .sort((a, b) => a.id - b.id)
+                .map((p, i) => (
+                  <div
+                    key={p.id}
+                    className="flex flex-col items-center gap-y-2 justify-center border rounded-md p-2 bg-muted"
+                  >
+                    <div className="flex items-center gap-x-3 w-full justify-between">
+                      <Label className="flex flex-row items-center gap-x-2 min-w-[100px]">
+                        <img src={p.image} width={28} className="rounded-sm" /> 
+                        <span className="font-medium">{p.name}</span>
                       </Label>
-                      <Input
-                        {...register(p.id.toString(), { value: 0 })}
-                        type="number"
-                      />
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-y-2 w-full">
-                {listFormStep2.map((_, i) => (
-                  <div className="flex" key={i}>
-                    <div className="flex w-5/12">
-                      <Select
-                        {...(register("w-" + i.toString()),
-                        { defaultValue: getValues("w-" + i.toString()) })}
-                        onValueChange={(value) => {
-                          setValue("w-" + i.toString(), value);
-                        }}
-                      >
-                        <SelectTrigger className="w-full flex">
-                          <SelectValue placeholder="người thắng" />
-                        </SelectTrigger>
-                        <SelectContent className="w-full flex">
-                          {players.map((p) => (
-                            <SelectItem
-                              value={p.id.toString()}
-                              key={p.id + p.name}
-                            >
-                              <div className="w-full flex gap-x-2">
-                                <img src={p.image} width={20} />
-                                {p.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex w-2/12 items-center justify-center ">
-                      <img src={trick} alt="toh" width={25} height={25} />
-                    </div>
-                    <div className="flex w-5/12">
-                      <Select
-                        {...(register("l-" + i.toString()),
-                        { defaultValue: getValues("l-" + i.toString()) })}
-                        onValueChange={(value) => {
-                          setValue("l-" + i.toString(), value);
-                        }}
-                      >
-                        <SelectTrigger className="w-full flex">
-                          <SelectValue placeholder="người thua" />
-                        </SelectTrigger>
-                        <SelectContent className="w-full flex">
-                          {players.map((p) => (
-                            <SelectItem
-                              value={p.id.toString()}
-                              key={p.id + p.name}
-                            >
-                              <div className="w-full flex gap-x-2">
-                                <img src={p.image} width={20} />
-                                {p.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+                      <div className="flex items-center gap-x-2 grow max-w-[200px]">
+                        <Input
+                          {...register(p.id.toString(), { value: 0 })}
+                          tabIndex={i + 1}
+                          type="number"
+                          className="border border-muted-foreground h-9"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 gap-x-1"
+                          onClick={() => setValue(p.id.toString(), 15)}
+                        >
+                          <img src={fire} width={18} />
+                          Cháy
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
+            </div>
 
-                <Button type="button" className="w-full my-2" variant={"destructive"} onClick={onResetStep2}>
-                  <Trash2 />
-                  Xoá dữ liệu hiện tại
-                </Button>
+            <div className="mt-4 border-t pt-4 w-full">
+              <h4 className="text-sm font-semibold mb-2 flex items-center justify-between">
+                <span>Lượt chặt 2</span>
+                <span className="text-xs font-normal text-muted-foreground">(Người chơi → bị chặt bởi)</span>
+              </h4>
+              <div className="max-h-[160px] overflow-y-auto pr-1">
+                {chopChains.map((chain, chainIndex) => (
+                  <div key={chainIndex} className="border border-dashed p-2 rounded-md mb-2 bg-background/50 flex flex-col gap-2 relative">
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs font-semibold px-1"
+                      onClick={() => {
+                        setChopChains(chopChains.filter((_, idx) => idx !== chainIndex));
+                      }}
+                    >
+                      Xoá
+                    </button>
+                    <div className="flex flex-wrap items-center gap-2 pr-6">
+                      <span className="text-xs font-bold text-primary">Lượt {chainIndex + 1}:</span>
+                      {chain.map((playerId, playerIndex) => (
+                        <div key={playerIndex} className="flex items-center gap-1">
+                          {playerIndex > 0 && <span className="text-xs text-muted-foreground">→</span>}
+                          <select
+                            value={playerId ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value ? parseInt(e.target.value) : null;
+                              const newChains = [...chopChains];
+                              newChains[chainIndex][playerIndex] = val!;
+                              setChopChains(newChains);
+                            }}
+                            className="p-1 rounded border text-xs bg-background text-foreground"
+                          >
+                            <option value="">Chọn...</option>
+                            {players.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] text-blue-500"
+                        onClick={() => {
+                          const newChains = [...chopChains];
+                          newChains[chainIndex].push(null as any);
+                          setChopChains(newChains);
+                        }}
+                      >
+                        + Chặt đè
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-            <div className="pt-4 w-full flex justify-end gap-x-2">
               <Button
                 type="button"
-                variant={"outline"}
-                className="w-full"
-                onClick={() => setStep(step === 1 ? 2 : 1)}
+                variant="outline"
+                size="sm"
+                className="w-full text-xs mt-1"
+                onClick={() => setChopChains([...chopChains, [null as any, null as any]])}
               >
-                {step === 1 ? "Chặt 2" : "Tính lá"}
+                + Thêm lượt chặt 2
               </Button>
+            </div>
+
+            <div className="pt-4 w-full flex justify-end gap-x-2">
               <Button type="submit" className="w-full">
                 Tính tiền
               </Button>

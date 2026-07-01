@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,26 +7,24 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Facebook,
   Github,
-  Info,
   Instagram,
 } from "lucide-react";
 
-export function DeveloperCreditModal() {
-  const [open, setOpen] = useState(false);
+interface DeveloperCreditModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
+export function DeveloperCreditModal({
+  open,
+  onOpenChange,
+}: DeveloperCreditModalProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <div className="flex w-full items-center px-1.5 py-1 rounded text-sm gap-x-2 hover:cursor-default hover:bg-foreground/10">
-          <Info width={20} />
-          Thông tin<strong>@Qý</strong>
-        </div>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader className="mt-2">
           <DialogTitle>Thông tin người phát triển</DialogTitle>
@@ -76,7 +73,7 @@ export function DeveloperCreditModal() {
             </a>
           </div>
         </div>
-        <Button onClick={() => setOpen(false)}>Close</Button>
+        <Button onClick={() => onOpenChange(false)}>Close</Button>
       </DialogContent>
     </Dialog>
   );

@@ -1,4 +1,4 @@
-import { Download, Plus, Settings, Upload } from "lucide-react";
+import { Download, Plus, Settings, Upload, LogOut, Info } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -7,22 +7,29 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { usePlayers } from "@/hooks/players";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { DeveloperCreditModal } from "./developer-credit-modal";
 
-export const SettingsDropdown = () => {
-  const { players, LAST_ID, clearSaveGame,loadGame } = usePlayers();
+type SettingsDropdownProps = {
+  onEndMatch?: () => void;
+};
+
+export const SettingsDropdown = ({ onEndMatch }: SettingsDropdownProps) => {
+  const { players, LAST_ID, multiplier, setMultiplier, clearSaveGame, loadGame } = usePlayers();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showCredit, setShowCredit] = useState(false);
+  
   const onNewGame = () => {
     clearSaveGame();
   };
 
   const onDownload = () => {
-    const fileName = "samloc-"+ Date();
+    const fileName = "samloc-" + Date();
     const json = JSON.stringify(
       {
         LAST_ID: LAST_ID,
         players: players,
+        multiplier: multiplier,
       },
       null,
       2
@@ -30,14 +37,12 @@ export const SettingsDropdown = () => {
     const blob = new Blob([json], { type: "application/json" });
     const href = URL.createObjectURL(blob);
 
-    // create "a" HTLM element with href to file
     const link = document.createElement("a");
     link.href = href;
     link.download = fileName + ".json";
     document.body.appendChild(link);
     link.click();
 
-    // clean up "a" element & remove ObjectURL
     document.body.removeChild(link);
     URL.revokeObjectURL(href);
   };
@@ -45,6 +50,7 @@ export const SettingsDropdown = () => {
   const onUpload = () => {
     inputRef.current?.click();
   };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -54,18 +60,17 @@ export const SettingsDropdown = () => {
       reader.onload = (e) => {
         try {
           const content = JSON.parse(e.target?.result as string);
-          loadGame(content.LAST_ID, content.players)
+          loadGame(content.LAST_ID, content.players, content.multiplier);
         } catch (err) {
           console.log(err);
-
         }
       };
 
       reader.onerror = () => {};
-
       reader.readAsText(file);
     }
   };
+
   return (
     <div>
       <input
@@ -81,7 +86,36 @@ export const SettingsDropdown = () => {
             <Settings />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent className="w-56" align="end">
+          <div 
+            className="p-3 border-b border-border/40 flex items-center justify-between gap-x-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-xs font-semibold text-muted-foreground">Hệ số tính tiền:</span>
+            <input
+              type="number"
+              min={1}
+              value={multiplier}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) || 1;
+                setMultiplier(val);
+              }}
+              className="w-16 h-8 text-center text-sm font-bold bg-muted border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          {onEndMatch && (
+            <DropdownMenuItem 
+              className="text-red-500 focus:text-red-500 focus:bg-red-500/10 font-bold"
+              onClick={() => {
+                setTimeout(() => {
+                  if (onEndMatch) onEndMatch();
+                }, 150);
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Kết thúc trận đấu
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={onNewGame}>
             <Plus />
             Ván mới
@@ -94,11 +128,21 @@ export const SettingsDropdown = () => {
             <Download />
             Tải xuống ván hiện tại
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <DeveloperCreditModal />
+          <DropdownMenuItem 
+            onClick={() => {
+              setTimeout(() => {
+                setShowCredit(true);
+              }, 150);
+            }}
+          >
+            <Info className="h-4 w-4 mr-2" />
+            <span>Thông tin</span>
+            <strong className="ml-auto text-xs text-muted-foreground">@Qý</strong>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <DeveloperCreditModal open={showCredit} onOpenChange={setShowCredit} />
     </div>
   );
 };

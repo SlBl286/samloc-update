@@ -9,10 +9,17 @@ export type PlayerType = {
 
 export type HistoryType = {
     gameNumber : number;
-    state: "W" | "L" | "D";
+    state: "W" | "L" | "H" | "FL" | "FW" | "FLF";
     pointChange : number;
     block2 : number;
     isBlock2 : number;
+    cardsCount?: number;
+    isChay?: boolean;
+    samStatus?: "none" | "success" | "fail" | "block" | "lost_to_sam";
+    isChopped2?: boolean;
+    pointDelta?: number;
+    cardsDelta?: number;
+    chopsDelta?: number;
 }
 export type PointSateType = {
     id: number;
