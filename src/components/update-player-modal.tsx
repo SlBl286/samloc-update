@@ -17,6 +17,8 @@ import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import { AvatarPicker } from "./avatar-picker";
 import { Pen } from "lucide-react";
+import { updateDbPlayer } from "@/services/db";
+import { useToast } from "@/hooks/use-toast";
 type UpdatePlayerModalProps = {
   id: number;
   onDialogClose?: ()=> void
@@ -24,6 +26,7 @@ type UpdatePlayerModalProps = {
 export const UpdatePlayerModal = ({ id,onDialogClose }: UpdatePlayerModalProps) => {
   const [open, setOpen] = useState(false);
   const { update } = usePlayers();
+  const { toast } = useToast();
   const player = usePlayers(state=> state.getPlayer(id));
   const form = useForm<z.infer<typeof addPlayerShema>>({
     resolver: zodResolver(addPlayerShema),
@@ -33,14 +36,28 @@ export const UpdatePlayerModal = ({ id,onDialogClose }: UpdatePlayerModalProps) 
     form.setValue("image",player.image);
     form.setValue("name",player.name);
   },[player,form])
-  const onSubmit = (values: z.infer<typeof addPlayerShema>) => {
+  const onSubmit = async (values: z.infer<typeof addPlayerShema>) => {
+    const avatar = values.image || "";
+    
+    // 1. Update globally in backend SQLite database
+    const success = await updateDbPlayer(player.name, values.name, avatar);
+    if (!success) {
+      toast({
+        title: "Lỗi cập nhật",
+        description: "Không thể cập nhật tên người chơi. Tên này có thể đã tồn tại!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 2. Save changes to local active game state store (preserving active scores/history)
     update(id, {
       id: id,
       name: values.name,
       description: values.description,
-      image: values.image,
-      point: 0,
-      histories: []
+      image: avatar,
+      point: player.point,
+      histories: player.histories
     });
     form.reset();
     setOpen(false);

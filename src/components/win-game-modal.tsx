@@ -14,6 +14,7 @@ import win from "@/assets/heart-eyes.png";
 import { Label } from "./ui/label";
 import { useForm } from "react-hook-form";
 import fire from "@/assets/fire.png";
+import { cn } from "@/lib/utils";
 
 type WinGameModalProps = {
   id: number;
@@ -24,12 +25,28 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
   const { register, handleSubmit, reset, unregister, setValue } =
     useForm();
   const [chopChains, setChopChains] = useState<number[][]>([]);
+  const [chayPlayers, setChayPlayers] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!open) {
       setChopChains([]);
+      setChayPlayers(new Set());
     }
   }, [open]);
+
+  const toggleChay = (playerId: number) => {
+    setChayPlayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+        setValue(playerId.toString(), 0);
+      } else {
+        next.add(playerId);
+        setValue(playerId.toString(), 15);
+      }
+      return next;
+    });
+  };
 
   const onSubmit = (values: Object) => {
     setOpen(false);
@@ -79,6 +96,8 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
       }
     });
 
+    const matchRound = Math.max(...players.map(pl => pl.histories.length), 0) + 1;
+
     players.forEach((p) => {
       const cardsDelta = (cardsChanges[p.id] || 0) * multiplier;
       const chopsDelta = (chopsChanges[p.id] || 0) * multiplier;
@@ -86,8 +105,9 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
       const val = p.id === id ? total : (parseInt((values as any)[p.id.toString()] as string) || 0);
       
       setPoint(p.id, p.point + change, {
+        gameNumber: matchRound,
         cardsCount: val,
-        isChay: p.id !== id && val === 15,
+        isChay: p.id !== id && chayPlayers.has(p.id),
         samStatus: "none",
         isChopped2: paidInChops.has(p.id),
         cardsDelta: cardsDelta,
@@ -109,7 +129,13 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Tính tiền</DialogTitle>
+          <DialogTitle className="flex items-center gap-x-2">
+            <span>Tính tiền</span>
+            <span className="text-xs text-muted-foreground/80 font-normal">
+              Ván {(players[0]?.histories.length ?? 0) + 1}
+              {multiplier > 1 && ` (x${multiplier})`}
+            </span>
+          </DialogTitle>
           <DialogDescription className="pt-2">
             Người ko chơi là người thắng! Dừng lại trước khi quá muộn.
           </DialogDescription>
@@ -143,12 +169,22 @@ export const WinGameModal = ({ id }: WinGameModalProps) => {
                         />
                         <Button
                           type="button"
-                          variant="outline"
+                          variant={chayPlayers.has(p.id) ? "default" : "outline"}
                           size="sm"
-                          className="h-9 gap-x-1"
-                          onClick={() => setValue(p.id.toString(), 15)}
+                          className={cn(
+                            "h-9 gap-x-1 transition-all duration-200",
+                            chayPlayers.has(p.id) ? "btn-chay-active" : "border-muted-foreground/40"
+                          )}
+                          onClick={() => toggleChay(p.id)}
                         >
-                          <img src={fire} width={18} />
+                          <img 
+                            src={fire} 
+                            width={18} 
+                            className={cn(
+                              "transition-transform",
+                              chayPlayers.has(p.id) ? "animate-flame-icon brightness-0 invert" : "opacity-80"
+                            )} 
+                          />
                           Cháy
                         </Button>
                       </div>

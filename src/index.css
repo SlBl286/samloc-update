@@ -137,3 +137,51 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Flame Animations */
+@keyframes flame-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(245, 158, 11, 0.3), inset 0 0 5px rgba(239, 68, 68, 0.4);
+    border-color: rgba(239, 68, 68, 0.6);
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.8), 0 0 30px rgba(245, 158, 11, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.6);
+    border-color: rgba(245, 158, 11, 0.8);
+    background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+  }
+}
+
+@keyframes flame-flicker {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 2px #f97316) drop-shadow(0 0 6px #ef4444);
+  }
+  20% {
+    transform: scale(1.08) rotate(-3deg);
+    filter: drop-shadow(0 0 3px #f97316) drop-shadow(0 0 8px #ef4444);
+  }
+  40% {
+    transform: scale(0.96) rotate(2deg);
+  }
+  60% {
+    transform: scale(1.12) rotate(-1deg);
+    filter: drop-shadow(0 0 4px #f59e0b) drop-shadow(0 0 10px #ef4444);
+  }
+  80% {
+    transform: scale(0.98) rotate(3deg);
+  }
+}
+
+.animate-flame-icon {
+  animation: flame-flicker 0.65s infinite ease-in-out;
+}
+
+.btn-chay-active {
+  animation: flame-glow 1.4s infinite ease-in-out !important;
+  color: white !important;
+  font-weight: 800 !important;
+  transform: translateY(-1px);
+  transition: all 0.2s ease-in-out;
+}
+

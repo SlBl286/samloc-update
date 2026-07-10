@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.env
+server/data
+server/samloc.db
+bun.lock
+yarn-error.log
+npm-debug.log

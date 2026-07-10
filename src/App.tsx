@@ -1,6 +1,6 @@
 import { ThemeProvider } from "./components/theme-provider";
 import { ModeToggle } from "./components/mode-toggle";
-import { initDb, getLeaderboard, saveMatchRound, LeaderboardRow } from "./services/db";
+import { initDb, getLeaderboard, saveMatch, LeaderboardRow } from "./services/db";
 import { Player } from "./components/player";
 import { AddPlayerModal } from "./components/add-player-modal";
 import { usePlayers } from "./hooks/players";
@@ -8,10 +8,13 @@ import { useEffect, useState } from "react";
 import { UpdatePlayerModal } from "./components/update-player-modal";
 import { DeletePlayerDialog } from "./components/delete-player-modal";
 import { HistoryPlayerModal } from "./components/history-player-modal";
+import { LeaderboardModal } from "./components/leaderboard-modal";
+import { PlayerDetailModal } from "./components/player-detail-modal";
 import { WinGameModal } from "./components/win-game-modal";
 import { CheckGameModal } from "./components/check-game-modal";
 import { useToast } from "./hooks/use-toast";
 import { SettingsDropdown } from "./components/setting-dropdown";
+import { MatchHistoryModal } from "./components/match-history-modal";
 import { Flipper, Flipped } from "react-flip-toolkit";
 import { Button } from "./components/ui/button";
 import { Undo2, Redo2, Trophy, Crown, Medal, Plus, ChevronLeft } from "lucide-react";
@@ -27,19 +30,21 @@ import {
 } from "@/components/ui/dialog";
 
 function App() {
-  const { players, remove, getPlayer, loadGame, undo, redo, redoStack, clearSaveGame } = usePlayers();
+  const { players, remove, getPlayer, loadGame, undo, redo, redoStack, clearSaveGame, multiplier } = usePlayers();
   const [idSelected, setIdSelected] = useState<number | null>(null);
   const { toast } = useToast();
   const sortedPlayers = [...players].sort((a, b) => b.point - a.point);
 
   const [dbLoaded, setDbLoaded] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [selectedDetailPlayer, setSelectedDetailPlayer] = useState<{ name: string; avatar: string | null } | null>(null);
   const [gameState, setGameState] = useState<"menu" | "playing">(() => {
     return (localStorage.getItem("game_state") as any) ?? "menu";
   });
 
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const hasActiveMatch = players.length > 1 || (players[0]?.histories.length > 0);
 
@@ -48,7 +53,8 @@ function App() {
       try {
         await initDb();
         loadGame();
-        setLeaderboard(getLeaderboard());
+        const board = await getLeaderboard();
+        setLeaderboard(board);
       } catch (e) {
         console.error(e);
       } finally {
@@ -58,11 +64,16 @@ function App() {
     startDb();
   }, []);
 
-  const changeGameState = (state: "menu" | "playing") => {
+  const changeGameState = async (state: "menu" | "playing") => {
     setGameState(state);
     localStorage.setItem("game_state", state);
     if (state === "menu") {
-      setLeaderboard(getLeaderboard());
+      try {
+        const board = await getLeaderboard();
+        setLeaderboard(board);
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -83,18 +94,32 @@ function App() {
     setShowResetConfirm(false);
   };
 
-  const handleEndMatch = (save: boolean) => {
+  const handleEndMatch = async (save: boolean) => {
+    if (isSaving) return;
     if (save) {
-      // Save all active player histories to SQLite
-      players.forEach((p) => {
-        p.histories.forEach((h) => {
-          saveMatchRound(p.name, p.image, h);
+      setIsSaving(true);
+      try {
+        // Save all active player histories to SQLite backend in a single batch
+        const matchData = players.map((p) => ({
+          name: p.name,
+          image: p.image,
+          histories: p.histories,
+        }));
+        await saveMatch(matchData);
+        toast({
+          title: "Trận đấu kết thúc",
+          description: "Đã lưu kết quả thi đấu vào cơ sở dữ liệu SQLite thành công!",
         });
-      });
-      toast({
-        title: "Trận đấu kết thúc",
-        description: "Đã lưu kết quả thi đấu vào cơ sở dữ liệu SQLite thành công!",
-      });
+      } catch (err) {
+        console.error("Failed to save match:", err);
+        toast({
+          title: "Lỗi lưu kết quả",
+          description: "Không thể lưu kết quả trận đấu lên máy chủ.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       toast({
         title: "Đã huỷ trận đấu",
@@ -104,7 +129,7 @@ function App() {
     }
     clearSaveGame();
     setIdSelected(null);
-    changeGameState("menu");
+    await changeGameState("menu");
     setShowEndConfirm(false);
   };
 
@@ -181,10 +206,11 @@ function App() {
                     Chưa có người chơi nào. Hãy tạo trận mới!
                   </div>
                 ) : (
-                  leaderboard.map((row) => (
+                  leaderboard.slice(0, 5).map((row) => (
                     <div
                       key={row.name}
-                      className="grid grid-cols-12 p-3 text-xs items-center hover:bg-muted/40 transition-colors"
+                      className="grid grid-cols-12 p-3 text-xs items-center hover:bg-muted/60 cursor-pointer transition-colors"
+                      onClick={() => setSelectedDetailPlayer({ name: row.name, avatar: row.avatar })}
                     >
                       <div className="col-span-2 flex items-center justify-center">
                         {getRankBadge(row.rank)}
@@ -226,6 +252,19 @@ function App() {
               </div>
             </div>
 
+            {/* See All Button */}
+            {leaderboard.length > 5 && (
+              <div className="bg-muted/30 border rounded-md overflow-hidden bg-background shadow-sm flex justify-center mt-[-16px]">
+                <LeaderboardModal
+                  trigger={
+                    <Button variant="ghost" className="w-full text-xs text-amber-500 hover:text-amber-600 hover:bg-amber-500/5 font-semibold py-2.5 rounded-none">
+                      Xem tất cả ({leaderboard.length} người chơi)
+                    </Button>
+                  }
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-y-3 pt-2">
               <Button
                 className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-lg flex items-center justify-center gap-x-2 shadow-sm"
@@ -242,6 +281,7 @@ function App() {
                   Tiếp tục trận đang chơi
                 </Button>
               )}
+              <MatchHistoryModal />
             </div>
           </div>
         </div>
@@ -265,6 +305,16 @@ function App() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <PlayerDetailModal
+          playerName={selectedDetailPlayer?.name || null}
+          avatar={selectedDetailPlayer?.avatar || null}
+          onClose={() => setSelectedDetailPlayer(null)}
+          onPlayerUpdated={async (_, newName, newAvatar) => {
+            setSelectedDetailPlayer({ name: newName, avatar: newAvatar });
+            const board = await getLeaderboard();
+            setLeaderboard(board);
+          }}
+        />
       </ThemeProvider>
     );
   }
@@ -290,8 +340,13 @@ function App() {
           </div>
 
           {/* Center Round Indicator */}
-          <div className="bg-background/50 px-3.5 py-1 rounded-full border border-border/40 text-xs font-bold text-primary">
-            {"Ván " + ((players[0]?.histories.length ?? 0) + 1)}
+          <div className="bg-background/50 px-3.5 py-1 rounded-full border border-border/40 text-xs font-bold text-primary flex items-center gap-x-1">
+            <span>{"Ván " + ((players[0]?.histories.length ?? 0) + 1)}</span>
+            {multiplier > 1 && (
+              <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[8px] px-1.5 py-0.2 rounded-full font-extrabold ml-1 leading-normal">
+                x{multiplier}
+              </span>
+            )}
           </div>
 
           {/* Right Part */}
@@ -395,17 +450,23 @@ function App() {
                 Chọn cách bạn muốn kết thúc trận đấu. Kết thúc & Lưu sẽ ghi nhận toàn bộ kết quả ván đấu của trận này vào lịch sử xếp hạng SQLite.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex flex-col gap-y-2 sm:flex-row sm:gap-x-2 mt-4">
-              <Button variant="outline" className="sm:flex-1" onClick={() => setShowEndConfirm(false)}>
-                Quay lại ván chơi
+            <div className="flex flex-col gap-y-2 mt-4 w-full">
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-sm h-10" 
+                onClick={() => handleEndMatch(true)}
+                disabled={isSaving}
+              >
+                {isSaving ? "Đang lưu kết quả..." : "Lưu & Kết thúc"}
               </Button>
-              <Button variant="destructive" className="sm:flex-1" onClick={() => handleEndMatch(false)}>
-                Huỷ ván (Không lưu)
-              </Button>
-              <Button className="sm:flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleEndMatch(true)}>
-                Lưu & Kết thúc
-              </Button>
-            </DialogFooter>
+              <div className="grid grid-cols-2 gap-x-2 w-full">
+                <Button variant="destructive" className="w-full text-xs h-10" onClick={() => handleEndMatch(false)}>
+                  Huỷ ván (Không lưu)
+                </Button>
+                <Button variant="outline" className="w-full text-xs h-10" onClick={() => setShowEndConfirm(false)}>
+                  Quay lại ván chơi
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

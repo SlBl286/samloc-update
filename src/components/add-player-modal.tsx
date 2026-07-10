@@ -27,11 +27,17 @@ export const AddPlayerModal = () => {
   const { add, addMultiple, LAST_ID, players } = usePlayers();
   const [tab, setTab] = useState<"existing" | "new">("existing");
   const [selectedDbPlayerIds, setSelectedDbPlayerIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const dbPlayers = getDbPlayers() || [];
+  const [dbPlayers, setDbPlayers] = useState<any[]>([]);
+
   const activePlayers = players || [];
   const availableDbPlayers = dbPlayers.filter(
     (dbP) => dbP && !activePlayers.some((p) => p && p.name === dbP.name)
+  );
+
+  const filteredDbPlayers = availableDbPlayers.filter((dbP) =>
+    dbP.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const form = useForm<z.infer<typeof addPlayerShema>>({
@@ -45,11 +51,19 @@ export const AddPlayerModal = () => {
   useEffect(() => {
     if (open) {
       setSelectedDbPlayerIds([]);
-      if (availableDbPlayers.length > 0) {
-        setTab("existing");
-      } else {
-        setTab("new");
-      }
+      setSearchQuery("");
+      getDbPlayers().then((data) => {
+        setDbPlayers(data);
+        const active = players || [];
+        const available = data.filter(
+          (dbP) => dbP && !active.some((p) => p && p.name === dbP.name)
+        );
+        if (available.length > 0) {
+          setTab("existing");
+        } else {
+          setTab("new");
+        }
+      }).catch(console.error);
     }
   }, [open, players]);
 
@@ -59,10 +73,10 @@ export const AddPlayerModal = () => {
     );
   };
 
-  const onSubmitNew = (values: z.infer<typeof addPlayerShema>) => {
+  const onSubmitNew = async (values: z.infer<typeof addPlayerShema>) => {
     const avatar = values.image || blank;
     // 1. Save to SQLite DB
-    createDbPlayer(values.name, avatar);
+    await createDbPlayer(values.name, avatar);
 
     // 2. Add to active game session
     add({
@@ -122,7 +136,10 @@ export const AddPlayerModal = () => {
               type="button"
               variant={tab === "existing" ? "default" : "outline"}
               className="flex-1 text-xs h-8"
-              onClick={() => setTab("existing")}
+              onClick={() => {
+                setTab("existing");
+                setSearchQuery("");
+              }}
             >
               Chọn từ danh sách
             </Button>
@@ -131,7 +148,10 @@ export const AddPlayerModal = () => {
             type="button"
             variant={tab === "new" ? "default" : "outline"}
             className="flex-1 text-xs h-8"
-            onClick={() => setTab("new")}
+            onClick={() => {
+              setTab("new");
+              setSearchQuery("");
+            }}
           >
             Tạo người chơi mới
           </Button>
@@ -141,32 +161,47 @@ export const AddPlayerModal = () => {
           {tab === "existing" ? (
             <form onSubmit={onSubmitExisting} className="space-y-4">
               <div className="space-y-2.5">
-                <Label className="text-sm font-semibold">Chọn tài khoản cũ</Label>
+                <div className="flex flex-col gap-y-1.5">
+                  <Label className="text-sm font-semibold">Chọn tài khoản cũ</Label>
+                  <Input
+                    type="text"
+                    placeholder="Tìm kiếm theo tên..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
                 <div className="max-h-[220px] overflow-y-auto border border-border/45 rounded-md divide-y bg-background">
-                  {availableDbPlayers.map((dbP) => {
-                    const isChecked = selectedDbPlayerIds.includes(dbP.id.toString());
-                    return (
-                      <label
-                        key={dbP.id}
-                        className="flex items-center justify-between p-3 hover:bg-muted/40 cursor-pointer transition-colors select-none"
-                      >
-                        <div className="flex items-center gap-x-2.5">
-                          <img
-                            src={dbP.avatar || blank}
-                            className="w-7 h-7 rounded-full object-cover bg-foreground/10"
-                            alt=""
+                  {filteredDbPlayers.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-muted-foreground">
+                      Không tìm thấy người chơi nào
+                    </div>
+                  ) : (
+                    filteredDbPlayers.map((dbP) => {
+                      const isChecked = selectedDbPlayerIds.includes(dbP.id.toString());
+                      return (
+                        <label
+                          key={dbP.id}
+                          className="flex items-center justify-between p-3 hover:bg-muted/40 cursor-pointer transition-colors select-none"
+                        >
+                          <div className="flex items-center gap-x-2.5">
+                            <img
+                              src={dbP.avatar || blank}
+                              className="w-7 h-7 rounded-full object-cover bg-foreground/10"
+                              alt=""
+                            />
+                            <span className="font-medium text-sm text-foreground">{dbP.name}</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleTogglePlayer(dbP.id.toString())}
+                            className="h-4.5 w-4.5 rounded border-border bg-background accent-amber-500 cursor-pointer"
                           />
-                          <span className="font-medium text-sm text-foreground">{dbP.name}</span>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleTogglePlayer(dbP.id.toString())}
-                          className="h-4.5 w-4.5 rounded border-border bg-background accent-amber-500 cursor-pointer"
-                        />
-                      </label>
-                    );
-                  })}
+                        </label>
+                      );
+                    })
+                  )}
                 </div>
               </div>
               <div className="pt-4 flex justify-end">

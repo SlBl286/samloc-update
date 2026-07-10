@@ -34,6 +34,19 @@ export const HistoryPlayerModal = ({ id, onDialogClose }: HistoryPlayerModalProp
     return h.pointChange - histories[index - 1].pointChange;
   };
 
+  const getChopText = (chopsDelta: number, mult: number, isWinner: boolean) => {
+    const basePoints = Math.abs(chopsDelta) / (mult || 1);
+    let level = "";
+    if (basePoints === 20) level = " x2";
+    else if (basePoints === 40) level = " x3";
+    else if (basePoints === 80) level = " x4";
+    else if (basePoints > 10) {
+      const logLvl = Math.log2(basePoints / 10) + 1;
+      if (Number.isInteger(logLvl)) level = ` x${logLvl}`;
+    }
+    return isWinner ? `Chặt 2${level}` : `Bị chặt 2${level}`;
+  };
+
   const getHistoryDetailText = (h: any) => {
     // 1. Handle Báo sâm events
     if (h.samStatus === "success") {
@@ -92,13 +105,13 @@ export const HistoryPlayerModal = ({ id, onDialogClose }: HistoryPlayerModalProp
         if (chopsDelta > 0) {
           elements.push(
             <span key="chops">
-              Chặt 2 <span className="text-green-500 font-bold">(+{chopsDelta})</span> 🪓
+              {getChopText(chopsDelta, h.multiplier || 1, true)} <span className="text-green-500 font-bold">(+{chopsDelta})</span> 🪓
             </span>
           );
         } else {
           elements.push(
             <span key="chops">
-              Bị chặt 2 <span className="text-red-500 font-bold">({chopsDelta})</span> 🪓
+              {getChopText(chopsDelta, h.multiplier || 1, false)} <span className="text-red-500 font-bold">({chopsDelta})</span> 🪓
             </span>
           );
         }
@@ -184,8 +197,13 @@ export const HistoryPlayerModal = ({ id, onDialogClose }: HistoryPlayerModalProp
                       key={index}
                       className="grid grid-cols-12 p-2.5 text-xs items-center hover:bg-muted/40 transition-colors"
                     >
-                      <div className="col-span-2 text-center font-medium text-muted-foreground">
-                        {index + 1}
+                      <div className="col-span-2 text-center font-medium text-muted-foreground flex flex-col items-center justify-center gap-y-0.5">
+                        <span>{index + 1}</span>
+                        {h.multiplier && h.multiplier > 1 && (
+                          <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[8px] px-1 py-0.2 rounded font-extrabold">
+                            x{h.multiplier}
+                          </span>
+                        )}
                       </div>
                       <div className="col-span-3 text-right pr-2 flex flex-col items-end justify-center">
                         <span

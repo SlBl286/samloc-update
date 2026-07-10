@@ -20,6 +20,7 @@ export type HistoryType = {
     pointDelta?: number;
     cardsDelta?: number;
     chopsDelta?: number;
+    multiplier?: number;
 }
 export type PointSateType = {
     id: number;

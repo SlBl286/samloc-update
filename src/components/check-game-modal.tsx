@@ -50,15 +50,19 @@ export const CheckGameModal = ({
     const samPenalty = 20 * (totalPlayers - 1) * multiplier;
     const regularPenalty = 20 * multiplier;
 
+    const matchRound = Math.max(...players.map(pl => pl.histories.length), 0) + 1;
+
     players.forEach((p) => {
       if (isSuccess) {
         if (p.id === id) {
           setPoint(p.id, p.point + samPenalty, {
+            gameNumber: matchRound,
             samStatus: "success",
             cardsCount: samPenalty,
           });
         } else {
           setPoint(p.id, p.point - regularPenalty, {
+            gameNumber: matchRound,
             samStatus: "lost_to_sam",
             cardsCount: regularPenalty,
           });
@@ -67,16 +71,19 @@ export const CheckGameModal = ({
         // Announcer fails (đền sâm)
         if (p.id === id) {
           setPoint(p.id, p.point - samPenalty, {
+            gameNumber: matchRound,
             samStatus: "fail",
             cardsCount: samPenalty,
           });
         } else if (p.id === stopperId) {
           setPoint(p.id, p.point + samPenalty, {
+            gameNumber: matchRound,
             samStatus: "block",
             cardsCount: samPenalty,
           });
         } else {
           setPoint(p.id, p.point, {
+            gameNumber: matchRound,
             samStatus: "none",
             cardsCount: 0,
           });
@@ -99,7 +106,13 @@ export const CheckGameModal = ({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Báo sâm</DialogTitle>
+          <DialogTitle className="flex items-center gap-x-2">
+            <span>Báo sâm</span>
+            <span className="text-xs text-muted-foreground/80 font-normal">
+              Ván {(players[0]?.histories.length ?? 0) + 1}
+              {multiplier > 1 && ` (x${multiplier})`}
+            </span>
+          </DialogTitle>
           <DialogDescription className="pt-2">
             Người ko chơi là người thắng! Dừng lại trước khi quá muộn.
           </DialogDescription>

@@ -2,6 +2,14 @@ import { PlayerType, HistoryType } from "@/common/types";
 import { create } from "zustand";
 import { GAME_KEY, LAST_ID_KEY } from "@/common/contants";
 
+const DEFAULT_PLAYER: PlayerType = {
+  id: -1,
+  name: "",
+  point: 0,
+  image: "",
+  histories: []
+};
+
 export type RedoItem = {
   playerId: number;
   point: number;
@@ -95,7 +103,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
         state.players.find((p) => p.id === id) ?? state.players[0];
       var histories = [...currentPlayer.histories];
       
-      const gameNumber = histories.length + 1;
+      const gameNumber = historyDetails?.gameNumber ?? (histories.length + 1);
       const pointDelta = point - currentPlayer.point;
       const stateVal = historyDetails?.state ?? (pointDelta > 0 ? "W" : pointDelta < 0 ? "L" : "H");
 
@@ -112,6 +120,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
         isBlock2: historyDetails?.isBlock2 ?? 0,
         cardsDelta: historyDetails?.cardsDelta,
         chopsDelta: historyDetails?.chopsDelta,
+        multiplier: state.multiplier,
       };
       histories.push(newHistory);
 
@@ -132,13 +141,7 @@ export const usePlayers = create<PlayersStore>((set, get) => ({
   },
   getPlayer: (id) => {
     var player = get().players.find((p) => p.id === id);
-    return player || {
-      id: 0,
-      name: "",
-      point: 0,
-      image: "",
-      histories: []
-    };
+    return player || DEFAULT_PLAYER;
   },
   saveGame: () => {
     localStorage.setItem(GAME_KEY, JSON.stringify(get().players));
