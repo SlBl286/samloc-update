@@ -181,22 +181,23 @@ function App() {
           <div className="fixed top-4 right-4 z-50">
             <ModeToggle />
           </div>
-          <div className="flex flex-col relative gap-y-6 w-full max-w-[500px] px-4">
+          <div className="flex flex-col relative gap-y-6 w-full max-w-[680px] px-4">
             <div className="text-center flex flex-col items-center gap-y-2 mt-4">
               <Trophy className="h-12 w-12 text-yellow-500" />
               <h1 className="text-2xl font-bold tracking-tight">Sâm Lốc Cao Thủ 🏆</h1>
               <p className="text-xs text-muted-foreground">
-                Bảng xếp hạng tổng điểm thi đấu của tất cả người chơi.
+                Bảng xếp hạng hiệu suất thi đấu (điểm trung bình mỗi ván) của tất cả người chơi.
               </p>
             </div>
 
             <div className="border rounded-md overflow-hidden bg-background shadow-md">
               {/* Header row */}
-              <div className="grid grid-cols-12 bg-muted p-2.5 font-bold text-xs text-muted-foreground border-b uppercase tracking-wider">
-                <div className="col-span-2 text-center">Hạng</div>
-                <div className="col-span-5 pl-2">Người chơi</div>
-                <div className="col-span-3 text-right">Tổng điểm</div>
-                <div className="col-span-2 text-center">Tỷ lệ</div>
+              <div className="grid grid-cols-12 bg-muted p-2.5 font-bold text-[11px] text-muted-foreground border-b uppercase tracking-wider">
+                <div className="col-span-1 text-center">Hạng</div>
+                <div className="col-span-4 pl-2">Người chơi</div>
+                <div className="col-span-2 text-center">Ván</div>
+                <div className="col-span-2 text-center">T-B-H (Tỷ lệ)</div>
+                <div className="col-span-3 text-right pr-2">Hiệu số (Tổng)</div>
               </div>
 
               {/* List */}
@@ -212,10 +213,10 @@ function App() {
                       className="grid grid-cols-12 p-3 text-xs items-center hover:bg-muted/60 cursor-pointer transition-colors"
                       onClick={() => setSelectedDetailPlayer({ name: row.name, avatar: row.avatar })}
                     >
-                      <div className="col-span-2 flex items-center justify-center">
+                      <div className="col-span-1 flex items-center justify-center">
                         {getRankBadge(row.rank)}
                       </div>
-                      <div className="col-span-5 pl-2 flex items-center gap-x-2.5 min-w-0">
+                      <div className="col-span-4 pl-2 flex items-center gap-x-2 min-w-0">
                         <img
                           src={row.avatar || blank}
                           className="w-7 h-7 rounded-full object-cover bg-foreground/10"
@@ -223,27 +224,33 @@ function App() {
                         />
                         <span className="font-semibold text-sm truncate">{row.name}</span>
                       </div>
+                      <div className="col-span-2 text-center flex flex-col justify-center">
+                        <span className="font-semibold text-sm">{row.totalGames} ván</span>
+                        <span className="text-[9px] text-muted-foreground mt-0.5">{row.totalMatches} trận</span>
+                      </div>
+                      <div className="col-span-2 text-center flex flex-col justify-center">
+                        <span className="font-medium text-muted-foreground text-[11px]">
+                          <span className="text-green-500">{row.wins}</span>-
+                          <span className="text-red-500">{row.losses}</span>-
+                          <span>{row.draws}</span>
+                        </span>
+                        <span className="text-[9px] font-semibold text-foreground mt-0.5">TL: {row.winRate}%</span>
+                      </div>
                       <div className="col-span-3 text-right pr-2 flex flex-col items-end justify-center">
                         <span
                           className={cn(
                             "font-bold text-sm",
-                            row.totalPoints > 0
+                            row.efficiency > 0
                               ? "text-green-500"
-                              : row.totalPoints < 0
+                              : row.efficiency < 0
                               ? "text-red-500"
                               : "text-muted-foreground"
                           )}
                         >
-                          {row.totalPoints > 0 ? `+${row.totalPoints}` : row.totalPoints}
+                          {row.efficiency > 0 ? `+${row.efficiency}` : row.efficiency}
                         </span>
                         <span className="text-[9px] text-muted-foreground mt-0.5">
-                          {row.wins}T - {row.losses}B - {row.draws}H
-                        </span>
-                      </div>
-                      <div className="col-span-2 text-center font-medium text-muted-foreground">
-                        <span className="font-bold text-foreground">{row.winRate}%</span>
-                        <span className="block text-[8px] text-muted-foreground/60">
-                          {row.totalGames} ván
+                          Tổng: {row.totalPoints > 0 ? `+${row.totalPoints}` : row.totalPoints}
                         </span>
                       </div>
                     </div>

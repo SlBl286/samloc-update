@@ -42,10 +42,12 @@ export type LeaderboardRow = {
   avatar: string;
   totalPoints: number;
   totalGames: number;
+  totalMatches: number;
   wins: number;
   losses: number;
   draws: number;
   winRate: number;
+  efficiency: number;
 };
 
 export async function getLeaderboard(): Promise<LeaderboardRow[]> {

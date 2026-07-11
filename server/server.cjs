@@ -242,34 +242,57 @@ app.get('/api/leaderboard', async (req, res) => {
         p.avatar,
         COALESCE(SUM(m.point_delta), 0) as total_points,
         COUNT(m.id) as total_games,
+        SUM(CASE WHEN m.game_number = 1 THEN 1 ELSE 0 END) as total_matches,
         SUM(CASE WHEN m.state = 'W' THEN 1 ELSE 0 END) as wins,
         SUM(CASE WHEN m.state = 'L' THEN 1 ELSE 0 END) as losses,
         SUM(CASE WHEN m.state = 'H' THEN 1 ELSE 0 END) as draws
       FROM players p
       LEFT JOIN match_history m ON p.id = m.player_id
       GROUP BY p.id
-      ORDER BY total_points DESC
     `;
     const rows = await allQuery(sql);
     
-    const list = rows.map((item, idx) => {
+    const list = rows.map((item) => {
       const total_games = item.total_games || 0;
+      const total_points = item.total_points || 0;
+      const total_matches = item.total_matches || (total_games > 0 ? 1 : 0);
+      const efficiency = total_games > 0 ? Number((total_points / total_games).toFixed(2)) : 0;
       const wins = item.wins || 0;
       const winRate = total_games > 0 ? Math.round((wins / total_games) * 100) : 0;
       return {
-        rank: idx + 1,
         name: item.name,
         avatar: resolveAvatarUrl(req, item.avatar),
-        totalPoints: item.total_points || 0,
+        totalPoints: total_points,
         totalGames: total_games,
+        totalMatches: total_matches,
         wins: wins,
         losses: item.losses || 0,
         draws: item.draws || 0,
         winRate: winRate,
+        efficiency: efficiency
       };
     });
     
-    res.json(list);
+    // Sort by efficiency descending, then totalPoints descending, then totalGames descending, then alphabetically by name
+    list.sort((a, b) => {
+      if (b.efficiency !== a.efficiency) {
+        return b.efficiency - a.efficiency;
+      }
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      if (b.totalGames !== a.totalGames) {
+        return b.totalGames - a.totalGames;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    const rankedList = list.map((item, idx) => ({
+      ...item,
+      rank: idx + 1
+    }));
+    
+    res.json(rankedList);
   } catch (err) {
     console.error('Failed to compute leaderboard:', err);
     res.status(500).json({ error: 'Failed to compute leaderboard' });
