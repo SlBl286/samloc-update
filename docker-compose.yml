@@ -8,18 +8,16 @@ services:
         - VITE_API_URL=${VITE_API_URL}
     container_name: samloc-app
     restart: unless-stopped
+    ports:
+      - "3001:3001"
     environment:
       - PORT=3001
       - DATA_DIR=/data/samloc
       - NODE_ENV=production
     volumes:
-      - samloc-data:/data/samloc
+      - ./server/data:/data/samloc
     networks:
       - proxy
-
-volumes:
-  samloc-data:
-    driver: local
 
 networks:
   proxy:
