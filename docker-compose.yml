@@ -13,7 +13,7 @@ services:
       - DATA_DIR=/data/samloc
       - NODE_ENV=production
     volumes:
-      - ./server/data:/data/samloc
+      - /data/samloc:/data/samloc
     networks:
       - proxy
 
